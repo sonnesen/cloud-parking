@@ -1,61 +1,88 @@
 package one.digitalinnovation.cloudparking.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import one.digitalinnovation.cloudparking.controller.mapper.ParkingMapper;
+import one.digitalinnovation.cloudparking.exception.InvalidParkingPropertyException;
+import one.digitalinnovation.cloudparking.exception.ParkingNotFoundException;
 import one.digitalinnovation.cloudparking.model.Parking;
+import one.digitalinnovation.cloudparking.repository.ParkingRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class ParkingService {
 
-    private static Map<String, Parking> parkingMap = new HashMap();
+    private final ParkingMapper parkingMapper;
+    private final ParkingRepository parkingRepository;
 
-    static {
-        var parking1 = Parking.builder()
-                .id(getUUID())
-                .color("PRETO")
-                .license("MSS-1111")
-                .model("GOL")
-                .state("SP")
-                .entryDate(LocalDateTime.now())
-                .build();
-
-        var parking2 = Parking.builder()
-                .id(getUUID())
-                .color("PRATA")
-                .license("ABC-1234")
-                .model("NISSAN VERSA")
-                .state("SC")
-                .entryDate(LocalDateTime.now())
-                .build();
-
-        parkingMap.put(parking1.getId(), parking1);
-        parkingMap.put(parking2.getId(), parking2);
-    }
-
-    private static String getUUID() {
-        return UUID.randomUUID().toString().replace("-", "");
-    }
-
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<Parking> findAll() {
-        return parkingMap.values().stream().collect(Collectors.toList());
+        return parkingRepository.findAll();
     }
 
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public Parking findById(String id) {
-        return parkingMap.get(id);
+        return parkingRepository.findById(id).orElseThrow(() -> new ParkingNotFoundException(id));
     }
 
-    public Parking create(Parking newParking) {
-        newParking.setId(getUUID());
-        newParking.setEntryDate(LocalDateTime.now());
+    @Transactional
+    public Parking create(Parking parkingCreate) {
+        parkingCreate.setEntryDate(LocalDateTime.now());
+        parkingRepository.save(parkingCreate);
+        return parkingCreate;
+    }
 
-        parkingMap.put(newParking.getId(), newParking);
+    @Transactional
+    public void delete(String id) {
+        findById(id);
+        parkingRepository.deleteById(id);
+    }
 
-        return newParking;
+    @Transactional
+    public Parking patch(String id, Map<String, Object> changes) {
+        var parking = findById(id);
+        changes.forEach((key, value) -> {
+            try {
+                PropertyDescriptor propertyDescriptor = new PropertyDescriptor(key, Parking.class);
+                Method setter = propertyDescriptor.getWriteMethod();
+                setter.invoke(parking, value);
+            } catch (IntrospectionException | InvocationTargetException | IllegalAccessException e) {
+                throw new InvalidParkingPropertyException(key);
+            }
+        });
+        parkingRepository.save(parking);
+        return parking;
+    }
+
+    @Transactional
+    public Parking update(String id, Parking parkingToUpdate) {
+        var parking = findById(id);
+        parking.setModel(parkingToUpdate.getModel());
+        parking.setState(parkingToUpdate.getState());
+        parking.setLicense(parkingToUpdate.getLicense());
+        parking.setColor(parkingToUpdate.getColor());
+        parkingRepository.save(parking);
+        return parking;
+    }
+
+    @Transactional
+    public Parking checkout(String id) {
+        var parking = findById(id);
+        parking.setExitDate(LocalDateTime.now());
+        parking.setBill(ParkingCheckout.getBill(parking));
+        parkingRepository.save(parking);
+        return parking;
     }
 }

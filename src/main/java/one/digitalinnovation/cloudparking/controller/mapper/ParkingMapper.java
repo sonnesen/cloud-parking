@@ -2,6 +2,7 @@ package one.digitalinnovation.cloudparking.controller.mapper;
 
 import one.digitalinnovation.cloudparking.controller.dto.ParkingCreateDTO;
 import one.digitalinnovation.cloudparking.controller.dto.ParkingDTO;
+import one.digitalinnovation.cloudparking.controller.dto.ParkingUpdateDTO;
 import one.digitalinnovation.cloudparking.model.Parking;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,10 @@ public class ParkingMapper {
     }
 
     public Parking toParking(ParkingCreateDTO dto) {
+        return MODEL_MAPPER.map(dto, Parking.class);
+    }
+
+    public Parking toParking(ParkingUpdateDTO dto) {
         return MODEL_MAPPER.map(dto, Parking.class);
     }
 }
