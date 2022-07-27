@@ -13,9 +13,10 @@ public class ParkingCheckout {
     public static final double ADDITIONAL_PER_HOUR_VALUE = 2.0;
     public static final double DAY_VALUE = 20.0;
 
-    private ParkingCheckout(){
+    private ParkingCheckout() {
 
     }
+
     public static Double getBill(Parking parking) {
         return getBill(parking.getEntryDate(), parking.getExitDate());
     }

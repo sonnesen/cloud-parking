@@ -4,9 +4,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
+
+import java.util.Arrays;
 
 @Configuration
 public class SwaggerConfig {
@@ -17,7 +20,23 @@ public class SwaggerConfig {
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("one.digitalinnovation.cloudparking"))
                 .build()
-                .apiInfo(metaData());
+                .apiInfo(metaData())
+                .securityContexts(Arrays.asList(getSecurityContext()))
+                .securitySchemes(Arrays.asList(getBasicAuthScheme()));
+    }
+
+    private SecurityScheme getBasicAuthScheme() {
+        return new BasicAuth("basicAuth");
+    }
+
+    private SecurityContext getSecurityContext() {
+        return SecurityContext.builder()
+                .securityReferences(Arrays.asList(getBasicAuthReference()))
+                .build();
+    }
+
+    private SecurityReference getBasicAuthReference() {
+        return new SecurityReference("basicAuth", new AuthorizationScope[0]);
     }
 
     private ApiInfo metaData() {

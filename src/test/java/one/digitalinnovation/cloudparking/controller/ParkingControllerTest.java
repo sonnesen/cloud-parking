@@ -1,7 +1,6 @@
 package one.digitalinnovation.cloudparking.controller;
 
 import io.restassured.RestAssured;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -26,6 +25,7 @@ class ParkingControllerTest {
 
     @Container
     static final PostgreSQLContainer<?> POSTGRE_SQL_CONTAINER = new PostgreSQLContainer<>("postgres:latest");
+
     @LocalServerPort
     private int port;
 
@@ -44,6 +44,7 @@ class ParkingControllerTest {
     @Test
     void whenFindAllThenCheckResult() {
         given()
+                .header("Authorization", "Basic dXNlcjp1c2VyQDEyMw==")
                 .when()
                 .get("/parkings")
                 .then()
@@ -62,6 +63,7 @@ class ParkingControllerTest {
         request.put("state", "SC");
 
         given()
+                .header("Authorization", "Basic YWRtaW46YWRtaW5AMTIz")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .body(request)
                 .when()
